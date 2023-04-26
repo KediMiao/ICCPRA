@@ -9,3 +9,9 @@ The International Community CPR Alliance (ICCPRA) is a global organization dedic
 - First Aid/CPR/AED Course Registration
 - ICCPRA Membership Management
 - MIS for students/teachers/Admin
+
+Design Doc:
+The latest version[Design Doc] for ICCPRA Web Application
+
+[//]: #
+[Design Doc]: https://docs.google.com/document/d/1w9lUG6vEHRggoWhYA_plaenUNRni1z7mOXo0mHMz8as/edit?usp=sharing
