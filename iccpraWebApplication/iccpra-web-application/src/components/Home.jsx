@@ -18,6 +18,9 @@ const Home = () => {
         <li>
           <Link to="/register">Register</Link>
         </li>
+        <li>
+          <Link to="/form">form</Link>
+        </li>
       </ul>
     </div>
   );
