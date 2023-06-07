@@ -5,8 +5,8 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
-import Form from "./form/Form";
 
+import Form from "./form/Form";
 import Home from "./components/Home";
 import Certificate from "./components/Certificate";
 import SignIn from "./components/SignIn";
