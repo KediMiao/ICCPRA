@@ -18,6 +18,12 @@ const Home = () => {
         <li>
           <Link to="/register">Register</Link>
         </li>
+        <li>
+          <Link to="/errorMessage">ErrorMessage</Link>
+        </li>
+        <li>
+          <Link to="/registerConfirmation">RegisterConfirmation</Link>
+        </li>
       </ul>
     </div>
   );

@@ -10,6 +10,8 @@ import Home from "./components/Home";
 import Certificate from "./components/Certificate";
 import SignIn from "./components/SignIn";
 import Register from "./components/register/register";
+import ErrorMessage from "./components/studentReschedule/errorMessage";
+import RegisterConfirmation from "./components/registerConfirmation/registerConfirmation";
 
 function App() {
   return (
@@ -20,11 +22,16 @@ function App() {
           <Route path="/certificate" element={<Certificate />} />
           <Route path="/signin" element={<SignIn />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/errorMessage" element={<ErrorMessage />} />
+          <Route
+            path="/registerConfirmation"
+            element={<RegisterConfirmation />}
+          />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </Router>
     </>
   );
 }
-// test 2
+
 export default App;
