@@ -11,6 +11,7 @@ import Home from "./components/Home";
 import Certificate from "./components/Certificate";
 import SignIn from "./components/SignIn";
 import Register from "./components/register/register";
+import Login from "./Login";
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/certificate" element={<Certificate />} />
           <Route path="/signin" element={<SignIn />} />
+          <Route path="/guestLogin" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="*" element={<Navigate to="/" />} />
           <Route path="/form" element={<Form />}></Route>

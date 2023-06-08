@@ -45,9 +45,9 @@ app.post("/api/insert", (req, res) => {
 });
 
 app.post("/login", (req, res) => {
-  const { email, lastName } = req.body;
-  const sql = "SELECT * FROM students WHERE email = ? AND lastName = ?";
-  db.query(sql, [email, lastName], (err, data) => {
+  const { email, idStudents } = req.body;
+  const sql = "SELECT * FROM students WHERE email = ? AND idStudents = ?";
+  db.query(sql, [email, idStudents], (err, data) => {
     if (err) {
       return res.json("Error");
     }
@@ -59,47 +59,41 @@ app.post("/login", (req, res) => {
   });
 });
 
-app.get("/api/userinfo", (req, res) => {
-  const { email } = req.query;
-  const sql = "SELECT * FROM students WHERE email = ?";
-  db.query(sql, [email], (err, data) => {
+app.get("/api/get", (req, res) => {
+  const sqlSelect = "SELECT * FROM students";
+  db.query(sqlSelect, (err, result) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
-    if (data.length > 0) {
-      res.json(data[0]);
-    } else {
-      res.status(404).json({ error: "User not found" });
-    }
+    res.json(result);
   });
 });
 
-app.put("/api/userinfo", (req, res) => {
-  const {
-    email,
-    firstName,
-    lastName,
-    phoneNum,
-    courseTime,
-    channel,
-    otherDetails,
-  } = req.body;
-  const sql =
-    "UPDATE students SET firstName = ?, lastName = ?, phoneNum = ?, courseTime = ?, channel = ?, otherDetails = ? WHERE email = ?";
-  db.query(
-    sql,
-    [firstName, lastName, phoneNum, courseTime, channel, otherDetails, email],
-    (err, result) => {
-      if (err) {
-        return res.status(500).json({ error: err.message });
-      }
-      if (result.affectedRows > 0) {
-        res.json({ message: "User info updated successfully" });
-      } else {
-        res.status(404).json({ error: "User not found" });
-      }
+app.get("/api/get/:userId", (req, res) => {
+  const userId = req.params.userId;
+  const sqlSelect = "SELECT * FROM students WHERE idStudents = ?";
+  db.query(sqlSelect, [userId], (err, result) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
     }
-  );
+    res.json(result);
+  });
+});
+
+app.put("/api/update/:userId", (req, res) => {
+  const userId = req.params.userId;
+  const { courseTime } = req.body;
+
+  const sqlUpdate = "UPDATE students SET courseTime = ? WHERE idStudents = ?";
+  db.query(sqlUpdate, [courseTime, userId], (err, result) => {
+    if (err) {
+      console.error(err);
+      res.status(500).send("Server error");
+    } else {
+      console.log(result);
+      res.status(200).send("Successfully updated course time");
+    }
+  });
 });
 
 app.listen(3001, () => {
