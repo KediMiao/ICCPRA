@@ -1,0 +1,99 @@
+  body {
+    background-color: #F9F5EB;
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+  }
+  
+  form {
+    background-color: #EAE3D2;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0px 0px 10px 2px rgba(0, 0, 0, 0.1);
+    color: #1C3879;
+    width: 600px;
+  }
+  
+  .headline {
+    text-align: center;
+  }
+  
+  .input-field {
+    width: 98.5%;
+    padding: 11px 20px;
+    margin: 8px 0;
+    display: inline-block;
+    border: 1px solid #607EAA;
+    border-radius: 4px;
+    box-sizing: border-box;
+  }
+  
+  label {
+    display: block;
+    margin-bottom: 10px;
+  }
+  
+  input[type="text"], input[type="email"] {
+    width: 95%;
+    padding: 10px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+    border: 1px solid #607EAA;
+  }
+  
+  button {
+    background-color: #1C3879;
+    color: #F9F5EB;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    text-transform: uppercase;
+    font-weight: bold;
+    display: block;
+    margin:0 auto;
+  }
+  
+  button:hover {
+    background-color: #607EAA;
+  }
+  
+  .notice {
+    background-color: #F9F5EB;
+    width: 92%;
+    color: #1C3879;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 12px;
+    text-transform: uppercase;
+    font-weight: bold;
+  }
+  
+  .modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .modal-open {
+    animation: fadeInScaleUp 0.5s ease-out;
+  }
+  
+  .modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    width: 80%;
+    max-width: 500px;
+  }
+  
+  
