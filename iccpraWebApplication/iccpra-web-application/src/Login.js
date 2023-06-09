@@ -61,7 +61,7 @@ function LoginForm() {
         />
       </div>
       <div className="form-group">
-        <label>User ID (Your Last Name):</label>
+        <label>User ID</label>
         <input
           type="text"
           name="userId"
