@@ -12,13 +12,14 @@ Modal.setAppElement("#root");
 
 function UserProfile() {
   const [user, setUser] = useState(null);
-  const [courseDate, setCourseDate] = useState(new Date());
+  const [courseDate, setCourseDate] = useState(null);
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
   const location = useLocation();
   const userId = location.state.userId;
 
   const handleDateChange = (date) => {
+    date.setHours(10, 0, 0, 0);
     setCourseDate(date);
   };
 
@@ -34,8 +35,13 @@ function UserProfile() {
       })
       .catch((error) => {
         console.error("There was an error!", error);
-        setModalMessage("There was an error updating the course time.");
-        setModalIsOpen(true);
+        if (error.response && error.response.status === 409) {
+          setModalMessage("This course time is full");
+          setModalIsOpen(true);
+        } else {
+          setModalMessage("There was an error updating the course time.");
+          setModalIsOpen(true);
+        }
       });
   };
 

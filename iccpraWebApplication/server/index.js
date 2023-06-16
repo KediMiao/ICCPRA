@@ -18,7 +18,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 //Table for Date registration limitation
 app.get("/api/createTable", (req, res) => {
   const sqlCreateTable =
-    "CREATE TABLE registrations (date VARCHAR(255), registrations INT)";
+    "CREATE TABLE registrations (date VARCHAR(255), count INT)";
   db.query(sqlCreateTable, (err, result) => {
     if (err) {
       console.error(err);
@@ -56,7 +56,7 @@ app.post("/api/insert", (req, res) => {
     otherDetails,
   } = req.body;
 
-  const date = courseTime.split("T")[0];
+  const date = courseTime;
 
   const sqlSelect = "SELECT * FROM registrations WHERE date = ?";
   db.query(sqlSelect, [date], (err, result) => {
@@ -66,10 +66,10 @@ app.post("/api/insert", (req, res) => {
     } else {
       if (result.length > 0) {
         // check if 12 slot is full when the chosen date is created
-        if (result[0].registrations < 2) {
+        if (result[0].count < 2) {
           // add and save the customer information if slot is avaliable
           const sqlUpdate =
-            "UPDATE registrations SET registrations = registrations + 1 WHERE date = ?";
+            "UPDATE registrations SET count = count + 1 WHERE date = ?";
           db.query(sqlUpdate, [date], (err, result) => {
             if (err) {
               console.error(err);
@@ -107,7 +107,7 @@ app.post("/api/insert", (req, res) => {
       } else {
         // create a new date record if chosen date is not found
         const sqlInsert =
-          "INSERT INTO registrations (date, registrations) VALUES (?, ?)";
+          "INSERT INTO registrations (date, count) VALUES (?, ?)";
         db.query(sqlInsert, [date, 1], (err, result) => {
           if (err) {
             console.error(err);
@@ -197,18 +197,76 @@ app.get("/api/get/:userId", (req, res) => {
 //Reschedule function
 app.put("/api/update/:userId", (req, res) => {
   const userId = req.params.userId;
-  const { courseTime } = req.body;
+  const newCourseTime = req.body.courseTime;
 
-  const sqlUpdate = "UPDATE students SET courseTime = ? WHERE idStudents = ?";
-  db.query(sqlUpdate, [courseTime, userId], (err, result) => {
-    if (err) {
-      console.error(err);
-      res.status(500).send("Server error");
-    } else {
-      console.log(result);
-      res.status(200).send("Successfully updated course time");
+  // First, get the old course time
+  db.query(
+    "SELECT courseTime FROM students WHERE idStudents = ?",
+    [userId],
+    (err, results) => {
+      if (err) {
+        console.error(err);
+        res.status(500).send("Server error");
+        return;
+      }
+
+      const oldCourseTime = results[0].courseTime;
+
+      // Second, check the new course time
+      db.query(
+        "SELECT COUNT(*) AS count FROM students WHERE courseTime = ?",
+        [newCourseTime],
+        (err, results) => {
+          if (err) {
+            console.error(err);
+            res.status(500).send("Server error");
+          } else if (results[0].count >= 2) {
+            res.status(409).send("This course time is full");
+          } else {
+            // Third, update the user
+            db.query(
+              "UPDATE students SET courseTime = ? WHERE idStudents = ?",
+              [newCourseTime, userId],
+              (err, results) => {
+                if (err) {
+                  console.error(err);
+                  res.status(500).send("Server error");
+                } else {
+                  // Fourth, decrement the old course time count
+                  db.query(
+                    "UPDATE registrations SET count = count - 1 WHERE date = ?",
+                    [oldCourseTime],
+                    (err, results) => {
+                      if (err) {
+                        console.error(err);
+                        res.status(500).send("Server error");
+                      } else {
+                        // Fifth, increment the new course time count
+                        db.query(
+                          "INSERT INTO registrations (date, count) VALUES (?, 1) ON DUPLICATE KEY UPDATE count = count + 1",
+                          [newCourseTime],
+                          (err, results) => {
+                            if (err) {
+                              console.error(err);
+                              res.status(500).send("Server error");
+                            } else {
+                              res
+                                .status(200)
+                                .send("Successfully updated course time");
+                            }
+                          }
+                        );
+                      }
+                    }
+                  );
+                }
+              }
+            );
+          }
+        }
+      );
     }
-  });
+  );
 });
 
 app.listen(3001, () => {
