@@ -54,23 +54,26 @@ function RegistrationForm() {
       })
       .then(() => {
         alert("Successful submission");
+        // Reset the form state
+        setFormState({
+          firstName: "",
+          middleName: "",
+          lastName: "",
+          phoneNumber: "",
+          email: "",
+          courseTime: null,
+          channel: "",
+          agreeToTerms: false,
+          otherDetails: "",
+        });
       })
       .catch((error) => {
-        console.error("There was an error!", error);
+        if (error.response && error.response.status === 409) {
+          alert("This course date is full");
+        } else {
+          console.error("There was an error!", error);
+        }
       });
-
-    // Reset the form state
-    setFormState({
-      firstName: "",
-      middleName: "",
-      lastName: "",
-      phoneNumber: "",
-      email: "",
-      courseTime: null,
-      channel: "",
-      agreeToTerms: false,
-      otherDetails: "",
-    });
   };
 
   return (
