@@ -5,10 +5,10 @@ const app = express();
 const mysql = require("mysql");
 
 const db = mysql.createPool({
-  host: "localhost",
-  user: "root",
-  password: "Gosvea2022@",
-  database: "cruddatabase",
+  host: "iccpra-rds-mysql-062023-webapplication.cd9upzil6vue.us-west-1.rds.amazonaws.com",
+  user: "iccpraAdmin",
+  password: "Gosvea2023",
+  database: "iccpraMysqlDatabase",
 });
 
 app.use(express.json());
