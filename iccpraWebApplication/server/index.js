@@ -18,11 +18,11 @@ app.use(bodyParser.urlencoded({ extended: true }));
 //Table for Date registration limitation
 app.get("/api/createTable", (req, res) => {
   const sqlCreateTable =
-    "CREATE TABLE registrations (date VARCHAR(255), registrations INT)";
+    "CREATE TABLE registrations (date VARCHAR(255), counts INT)";
   db.query(sqlCreateTable, (err, result) => {
     if (err) {
       console.error(err);
-      res.status(500).send("Server error");
+      res.status(500).send("Server error", console.log(err));
     } else {
       console.log(result);
       res.status(200).send("Successfully created table");

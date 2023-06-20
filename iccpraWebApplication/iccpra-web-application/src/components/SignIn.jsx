@@ -3,6 +3,7 @@ import Header from "./inPersonSignIn/Header";
 import Footer from "./inPersonSignIn/Footer";
 import Note from "./inPersonSignIn/Note";
 import CreateArea from "./inPersonSignIn/CreateArea";
+import "./SignIn.css";
 
 function SignIn() {
   const [item, setItem] = useState([]);

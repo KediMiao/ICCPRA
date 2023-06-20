@@ -1,5 +1,6 @@
 import React from "react";
 import Contacts from "./cprCertificate/contacts";
+import "./Certificate.css";
 import Avatar from "./cprCertificate/Avatar";
 import Card from "./cprCertificate/Card";
 
