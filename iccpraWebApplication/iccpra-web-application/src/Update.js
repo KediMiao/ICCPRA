@@ -6,8 +6,8 @@ import Modal from "react-modal";
 import "react-datepicker/dist/react-datepicker.css";
 import { startOfTomorrow, getDay, getHours } from "date-fns";
 import "./Update.css";
+import { useNavigate } from "react-router-dom";
 
-// Make sure to bind modal to your appElement (https://reactcommunity.org/react-modal/accessibility/)
 Modal.setAppElement("#root");
 
 function UserProfile() {
@@ -17,6 +17,32 @@ function UserProfile() {
   const [modalMessage, setModalMessage] = useState("");
   const location = useLocation();
   const userId = location.state.userId;
+  const navigate = useNavigate();
+  const [confirmModalIsOpen, setConfirmModalIsOpen] = useState(false);
+
+  const openConfirmModal = () => {
+    setConfirmModalIsOpen(true);
+  };
+
+  const cancelUserCourse = () => {
+    axios
+      .delete(`http://localhost:3001/api/cancel/${userId}`)
+      .then((response) => {
+        console.log("Response from server:", response);
+        setUser(null);
+        setCourseDate(null);
+        setModalMessage("Successfully cancelled course!");
+        setModalIsOpen(true);
+        setConfirmModalIsOpen(false);
+        navigate("/");
+      })
+      .catch((error) => {
+        console.error("There was an error!", error);
+        setModalMessage("There was an error cancelling the course.");
+        setModalIsOpen(true);
+        setConfirmModalIsOpen(false);
+      });
+  };
 
   const handleDateChange = (date) => {
     date.setHours(10, 0, 0, 0);
@@ -93,6 +119,26 @@ function UserProfile() {
             placeholderText="Select Course Time"
           />
           <button onClick={updateUserCourseTime}>Update Course Time</button>
+          <button onClick={openConfirmModal}>Cancel Course</button>
+
+          <Modal
+            isOpen={confirmModalIsOpen}
+            onRequestClose={() => setConfirmModalIsOpen(false)}
+            contentLabel="Confirm Cancel"
+            overlayClassName="ReactModal__Overlay"
+            className="ReactModal__Content"
+          >
+            <h2>Are you sure you want to cancel the course?</h2>
+            <button className="confirm-button" onClick={cancelUserCourse}>
+              Confirm
+            </button>
+            <button
+              className="close-button"
+              onClick={() => setConfirmModalIsOpen(false)}
+            >
+              Close
+            </button>
+          </Modal>
 
           <Modal
             isOpen={modalIsOpen}
