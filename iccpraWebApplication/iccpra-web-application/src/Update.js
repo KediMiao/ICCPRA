@@ -19,6 +19,7 @@ function UserProfile() {
   const userId = location.state.userId;
   const navigate = useNavigate();
   const [confirmModalIsOpen, setConfirmModalIsOpen] = useState(false);
+  const [courseUpdated, setCourseUpdated] = useState(false);
 
   const openConfirmModal = () => {
     setConfirmModalIsOpen(true);
@@ -50,6 +51,12 @@ function UserProfile() {
   };
 
   const updateUserCourseTime = () => {
+    if (!courseDate) {
+      // If the user hasn't selected a date, show a message and exit the function
+      setModalMessage("Please select a course time.");
+      setModalIsOpen(true);
+      return;
+    }
     axios
       .put(`http://localhost:3001/api/update/${userId}`, {
         courseTime: courseDate,
@@ -58,6 +65,7 @@ function UserProfile() {
         console.log("Updated course time:", response);
         setModalMessage("Successfully updated course time!");
         setModalIsOpen(true);
+        setCourseUpdated(true); // set courseUpdated to true after the course time is updated
       })
       .catch((error) => {
         console.error("There was an error!", error);
@@ -78,11 +86,12 @@ function UserProfile() {
         console.log("Response from server:", response.data);
         setUser(response.data[0]);
         console.log("Updated user state:", user);
+        setCourseUpdated(false); // reset courseUpdated after the user info is reloaded
       })
       .catch((error) => {
         console.error("There was an error!", error);
       });
-  }, [userId]);
+  }, [userId, courseUpdated]); // add courseUpdated to the dependency array
 
   //calendar time filter
   const isSaturday = (date) => {
@@ -104,7 +113,12 @@ function UserProfile() {
           </h2>
           <p>Email: {user.email}</p>
           <p>Phone Number: {user.phoneNum}</p>
-          <p>Course Time: {user.courseTime}</p>
+          <p>
+            Course Time:{" "}
+            {new Date(user.courseTime).toLocaleString("en-US", {
+              timeZone: "America/Los_Angeles",
+            })}
+          </p>
           <DatePicker
             selected={courseDate}
             onChange={handleDateChange}
