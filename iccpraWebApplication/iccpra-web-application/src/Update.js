@@ -4,7 +4,7 @@ import { useLocation } from "react-router-dom";
 import DatePicker from "react-datepicker";
 import Modal from "react-modal";
 import "react-datepicker/dist/react-datepicker.css";
-import { startOfTomorrow, getDay, getHours } from "date-fns";
+import { startOfTomorrow, getDay, getHours, differenceInHours } from "date-fns";
 import "./Update.css";
 import { useNavigate } from "react-router-dom";
 
@@ -25,32 +25,34 @@ function UserProfile() {
     setConfirmModalIsOpen(true);
   };
 
-  const cancelUserCourse = () => {
-    axios
-      .delete(`http://localhost:3001/api/cancel/${userId}`)
-      .then((response) => {
-        console.log("Response from server:", response);
-        setUser(null);
-        setCourseDate(null);
-        setModalMessage("Successfully cancelled course!");
-        setModalIsOpen(true);
-        setConfirmModalIsOpen(false);
-        navigate("/");
-      })
-      .catch((error) => {
-        console.error("There was an error!", error);
-        setModalMessage("There was an error cancelling the course.");
-        setModalIsOpen(true);
-        setConfirmModalIsOpen(false);
-      });
-  };
-
   const handleDateChange = (date) => {
     date.setHours(10, 0, 0, 0);
     setCourseDate(date);
   };
+  //calendar time filter
+  const isSaturday = (date) => {
+    return getDay(date) === 6;
+  };
+  //calendar time filter
+  const filterTime = (time) => {
+    const hours = getHours(time);
+    return hours === 10;
+  };
 
   const updateUserCourseTime = () => {
+    if (user && user.courseTime) {
+      const currentTime = new Date();
+      const courseTime = new Date(user.courseTime);
+      const timeDifference = differenceInHours(courseTime, currentTime);
+
+      if (timeDifference <= 24) {
+        setModalMessage(
+          "You cannot reschedule the course within 24 hours of the course time."
+        );
+        setModalIsOpen(true);
+        return;
+      }
+    }
     if (!courseDate) {
       // If the user hasn't selected a date, show a message and exit the function
       setModalMessage("Please select a course time.");
@@ -79,6 +81,39 @@ function UserProfile() {
       });
   };
 
+  const cancelUserCourse = () => {
+    if (user && user.courseTime) {
+      const currentTime = new Date();
+      const courseTime = new Date(user.courseTime);
+      const timeDifference = differenceInHours(courseTime, currentTime);
+
+      if (timeDifference <= 24) {
+        setModalMessage(
+          "You cannot cancel the course within 24 hours of the course time."
+        );
+        setModalIsOpen(true);
+        return;
+      }
+    }
+    axios
+      .delete(`http://localhost:3001/api/cancel/${userId}`)
+      .then((response) => {
+        console.log("Response from server:", response);
+        setUser(null);
+        setCourseDate(null);
+        setModalMessage("Successfully cancelled course!");
+        setModalIsOpen(true);
+        setConfirmModalIsOpen(false);
+        navigate("/");
+      })
+      .catch((error) => {
+        console.error("There was an error!", error);
+        setModalMessage("There was an error cancelling the course.");
+        setModalIsOpen(true);
+        setConfirmModalIsOpen(false);
+      });
+  };
+
   useEffect(() => {
     axios
       .get(`http://localhost:3001/api/get/${userId}`)
@@ -92,16 +127,6 @@ function UserProfile() {
         console.error("There was an error!", error);
       });
   }, [userId, courseUpdated]); // add courseUpdated to the dependency array
-
-  //calendar time filter
-  const isSaturday = (date) => {
-    return getDay(date) === 6;
-  };
-  //calendar time filter
-  const filterTime = (time) => {
-    const hours = getHours(time);
-    return hours === 10;
-  };
 
   return (
     <div>
@@ -128,7 +153,7 @@ function UserProfile() {
             timeCaption="time"
             dateFormat="MMMM d, yyyy h:mm aa"
             minDate={startOfTomorrow()}
-            filterDate={isSaturday}
+            //filterDate={isSaturday}
             filterTime={filterTime}
             placeholderText="Select Course Time"
           />
