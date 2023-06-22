@@ -269,6 +269,54 @@ app.put("/api/update/:userId", (req, res) => {
   );
 });
 
+// Cancellation function
+app.delete("/api/cancel/:userId", (req, res) => {
+  const userId = req.params.userId;
+
+  // First, get the course time
+  db.query(
+    "SELECT courseTime FROM students WHERE idStudents = ?",
+    [userId],
+    (err, results) => {
+      if (err) {
+        console.error(err);
+        res.status(500).send("Server error");
+        return;
+      }
+
+      const courseTime = results[0].courseTime;
+
+      // Second, delete the user
+      db.query(
+        "DELETE FROM students WHERE idStudents = ?",
+        [userId],
+        (err, results) => {
+          if (err) {
+            console.error(err);
+            res.status(500).send("Server error");
+          } else {
+            // Third, decrement the course time count
+            db.query(
+              "UPDATE registrations SET count = count - 1 WHERE date = ?",
+              [courseTime],
+              (err, results) => {
+                if (err) {
+                  console.error(err);
+                  res.status(500).send("Server error");
+                } else {
+                  res
+                    .status(200)
+                    .send("Successfully cancelled and removed user");
+                }
+              }
+            );
+          }
+        }
+      );
+    }
+  );
+});
+
 app.listen(3001, () => {
   console.log("running on port 3001");
 });
