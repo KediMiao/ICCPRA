@@ -3,6 +3,9 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 const app = express();
 const mysql = require("mysql");
+const stripe = require("stripe")(
+  "sk_test_51N0U7sIvvDWEzpsTGGZr2vWhXSgqTFtFS8B9CqVhcrzP6e4TI9qVf9wNsASpRAETR1cgWjvIqOrUUKs4vfGC16s300K6Nsuhdb"
+);
 
 const db = mysql.createPool({
   host: "iccpra-rds-mysql-062023-webapplication.cd9upzil6vue.us-west-1.rds.amazonaws.com",
@@ -14,6 +17,31 @@ const db = mysql.createPool({
 app.use(express.json());
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: true }));
+
+app.post("/api/create-payment-intent", async (req, res) => {
+  try {
+    const { amount } = req.body;
+
+    // Create a PaymentIntent with the order amount and currency
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount,
+      currency: "usd", //currency
+    });
+    console.log(paymentIntent);
+
+    if (!paymentIntent) {
+      console.error("PaymentIntent is null");
+      res.status(500).json({ error: "PaymentIntent creation failed" });
+    } else {
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+      });
+    }
+  } catch (err) {
+    console.error("Error creating PaymentIntent: ", err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 //Table for Date registration limitation
 app.get("/api/createTable", (req, res) => {
