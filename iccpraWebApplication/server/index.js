@@ -3,6 +3,7 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 const app = express();
 const mysql = require("mysql");
+const nodemailer = require("nodemailer");
 const stripe = require("stripe")(
   "sk_test_51N0U7sIvvDWEzpsTGGZr2vWhXSgqTFtFS8B9CqVhcrzP6e4TI9qVf9wNsASpRAETR1cgWjvIqOrUUKs4vfGC16s300K6Nsuhdb"
 );
@@ -18,6 +19,7 @@ app.use(express.json());
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+//API for create stripe payment
 app.post("/api/create-payment-intent", async (req, res) => {
   try {
     const { amount } = req.body;
@@ -41,21 +43,6 @@ app.post("/api/create-payment-intent", async (req, res) => {
     console.error("Error creating PaymentIntent: ", err);
     res.status(500).json({ error: err.message });
   }
-});
-
-//Table for Date registration limitation
-app.get("/api/createTable", (req, res) => {
-  const sqlCreateTable =
-    "CREATE TABLE registrations (date VARCHAR(255), count INT)";
-  db.query(sqlCreateTable, (err, result) => {
-    if (err) {
-      console.error(err);
-      res.status(500).send("Server error");
-    } else {
-      console.log(result);
-      res.status(200).send("Successfully created table");
-    }
-  });
 });
 
 // check date slot
@@ -167,19 +154,6 @@ app.post("/api/insert", (req, res) => {
           }
         });
       }
-    }
-  });
-});
-
-// Test code for table information
-app.get("/api/registrations", (req, res) => {
-  const sqlSelect = "SELECT * FROM registrations";
-  db.query(sqlSelect, (err, result) => {
-    if (err) {
-      console.error(err);
-      res.status(500).send("Server error");
-    } else {
-      res.json(result);
     }
   });
 });
