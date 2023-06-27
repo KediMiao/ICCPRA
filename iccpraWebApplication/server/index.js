@@ -196,6 +196,25 @@ app.get("/api/get/:userId", (req, res) => {
   });
 });
 
+app.post("/api/check-course", (req, res) => {
+  const courseTime = req.body.courseTime;
+
+  db.query(
+    "SELECT COUNT(*) AS count FROM students WHERE courseTime = ?",
+    [courseTime],
+    (err, results) => {
+      if (err) {
+        console.error(err);
+        res.status(500).send("Server error");
+      } else if (results[0].count >= 2) {
+        res.status(409).send("This course time is full");
+      } else {
+        res.status(200).send("Course time is available");
+      }
+    }
+  );
+});
+
 //Reschedule function
 app.put("/api/update/:userId", (req, res) => {
   const userId = req.params.userId;

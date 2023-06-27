@@ -48,6 +48,22 @@ function RegistrationForm() {
     if (!stripe || !elements) {
       return;
     }
+    try {
+      const checkCourseRes = await axios.post(
+        "http://localhost:3001/api/check-course",
+        {
+          courseTime: formState.courseTime,
+        }
+      );
+    } catch (error) {
+      if (error.response && error.response.status === 409) {
+        alert("This course date is full");
+        return;
+      } else {
+        console.error("There was an error!", error);
+        return;
+      }
+    }
 
     const cardElement = elements.getElement(CardElement);
 
@@ -116,11 +132,7 @@ function RegistrationForm() {
           });
         })
         .catch((error) => {
-          if (error.response && error.response.status === 409) {
-            alert("This course date is full");
-          } else {
-            console.error("There was an error!", error);
-          }
+          console.error("There was an error!", error);
         });
     }
   };
