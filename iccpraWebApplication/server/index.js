@@ -196,6 +196,7 @@ app.get("/api/get/:userId", (req, res) => {
   });
 });
 
+//Check avaliability function
 app.post("/api/check-course", (req, res) => {
   const courseTime = req.body.courseTime;
 

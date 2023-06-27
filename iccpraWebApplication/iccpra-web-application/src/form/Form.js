@@ -48,6 +48,7 @@ function RegistrationForm() {
     if (!stripe || !elements) {
       return;
     }
+    //check if the course is full
     try {
       const checkCourseRes = await axios.post(
         "http://localhost:3001/api/check-course",
