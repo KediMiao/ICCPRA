@@ -7,6 +7,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import { startOfTomorrow, getDay, getHours, differenceInHours } from "date-fns";
 import "./Update.css";
 import { useNavigate } from "react-router-dom";
+import { useStripe, useElements, CardElement } from "@stripe/react-stripe-js";
 
 Modal.setAppElement("#root");
 
@@ -39,7 +40,10 @@ function UserProfile() {
     return hours === 10;
   };
 
-  const updateUserCourseTime = () => {
+  const stripe = useStripe();
+  const elements = useElements();
+
+  const updateUserCourseTime = async () => {
     if (user && user.courseTime) {
       const currentTime = new Date();
       const courseTime = new Date(user.courseTime);
@@ -59,29 +63,84 @@ function UserProfile() {
       setModalIsOpen(true);
       return;
     }
-    axios
-      .put(`http://localhost:3001/api/update/${userId}`, {
-        courseTime: courseDate,
-      })
-      .then((response) => {
-        console.log("Updated course time:", response);
-        setModalMessage("Successfully updated course time!");
-        setModalIsOpen(true);
-        setCourseUpdated(true); // set courseUpdated to true after the course time is updated
-      })
-      .catch((error) => {
-        console.error("There was an error!", error);
-        if (error.response && error.response.status === 409) {
-          setModalMessage("This course time is full");
-          setModalIsOpen(true);
-        } else {
-          setModalMessage("There was an error updating the course time.");
-          setModalIsOpen(true);
+    if (!stripe || !elements) {
+      return;
+    }
+    //check if the course is full
+    try {
+      const checkCourseRes = await axios.post(
+        "http://localhost:3001/api/check-course",
+        {
+          courseTime: courseDate,
         }
+      );
+    } catch (error) {
+      if (error.response && error.response.status === 409) {
+        alert("This course date is full");
+        return;
+      } else {
+        console.error("There was an error!", error);
+        return;
+      }
+    }
+
+    const cardElement = elements.getElement(CardElement);
+
+    if (!cardElement) {
+      alert("Please enter your payment information");
+      return;
+    }
+
+    const { error, paymentMethod } = await stripe.createPaymentMethod({
+      type: "card",
+      card: cardElement,
+    });
+
+    if (error) {
+      console.log("[error]", error);
+      return;
+    }
+
+    const response = await axios.post(
+      "http://localhost:3001/api/create-payment-intent",
+      { amount: 2500 }
+    ); // amount is in cents
+
+    if (!response.data || !response.data.clientSecret) {
+      console.log("Invalid response from server:", response);
+      return;
+    }
+
+    const paymentIntent = response.data.clientSecret;
+
+    const { error: confirmError, paymentIntent: confirmedPaymentIntent } =
+      await stripe.confirmCardPayment(paymentIntent, {
+        payment_method: paymentMethod.id,
       });
+
+    if (confirmError) {
+      console.log("[confirmError]", confirmError);
+      return;
+    }
+
+    if (confirmedPaymentIntent.status === "succeeded") {
+      axios
+        .put(`http://localhost:3001/api/update/${userId}`, {
+          courseTime: courseDate,
+        })
+        .then((response) => {
+          console.log("Updated course time:", response);
+          setModalMessage("Successfully updated course time!");
+          setModalIsOpen(true);
+          setCourseUpdated(true); // set courseUpdated to true after the course time is updated
+        })
+        .catch((error) => {
+          console.error("There was an error!", error);
+        });
+    }
   };
 
-  const cancelUserCourse = () => {
+  const cancelUserCourse = async () => {
     if (user && user.courseTime) {
       const currentTime = new Date();
       const courseTime = new Date(user.courseTime);
@@ -95,23 +154,68 @@ function UserProfile() {
         return;
       }
     }
-    axios
-      .delete(`http://localhost:3001/api/cancel/${userId}`)
-      .then((response) => {
-        console.log("Response from server:", response);
-        setUser(null);
-        setCourseDate(null);
-        setModalMessage("Successfully cancelled course!");
-        setModalIsOpen(true);
-        setConfirmModalIsOpen(false);
-        navigate("/");
-      })
-      .catch((error) => {
-        console.error("There was an error!", error);
-        setModalMessage("There was an error cancelling the course.");
-        setModalIsOpen(true);
-        setConfirmModalIsOpen(false);
+    if (!stripe || !elements) {
+      return;
+    }
+
+    const cardElement = elements.getElement(CardElement);
+
+    if (!cardElement) {
+      alert("Please enter your payment information");
+      return;
+    }
+
+    const { error, paymentMethod } = await stripe.createPaymentMethod({
+      type: "card",
+      card: cardElement,
+    });
+
+    if (error) {
+      console.log("[error]", error);
+      return;
+    }
+
+    const response = await axios.post(
+      "http://localhost:3001/api/create-payment-intent",
+      { amount: 2500 }
+    ); // amount is in cents
+
+    if (!response.data || !response.data.clientSecret) {
+      console.log("Invalid response from server:", response);
+      return;
+    }
+
+    const paymentIntent = response.data.clientSecret;
+
+    const { error: confirmError, paymentIntent: confirmedPaymentIntent } =
+      await stripe.confirmCardPayment(paymentIntent, {
+        payment_method: paymentMethod.id,
       });
+
+    if (confirmError) {
+      console.log("[confirmError]", confirmError);
+      return;
+    }
+
+    if (confirmedPaymentIntent.status === "succeeded") {
+      axios
+        .delete(`http://localhost:3001/api/cancel/${userId}`)
+        .then((response) => {
+          console.log("Response from server:", response);
+          setUser(null);
+          setCourseDate(null);
+          setModalMessage("Successfully cancelled course!");
+          setModalIsOpen(true);
+          setConfirmModalIsOpen(false);
+          navigate("/");
+        })
+        .catch((error) => {
+          console.error("There was an error!", error);
+          setModalMessage("There was an error cancelling the course.");
+          setModalIsOpen(true);
+          setConfirmModalIsOpen(false);
+        });
+    }
   };
 
   useEffect(() => {
@@ -153,10 +257,14 @@ function UserProfile() {
             timeCaption="time"
             dateFormat="MMMM d, yyyy h:mm aa"
             minDate={startOfTomorrow()}
-            //filterDate={isSaturday}
+            filterDate={isSaturday}
             filterTime={filterTime}
             placeholderText="Select Course Time"
           />
+          <div className="stripe-section">
+            <h4>Payment Information *</h4>
+            <CardElement />
+          </div>
           <button onClick={updateUserCourseTime}>Update Course Time</button>
           <button onClick={openConfirmModal}>Cancel Course</button>
 

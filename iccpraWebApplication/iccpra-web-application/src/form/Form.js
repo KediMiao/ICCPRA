@@ -9,8 +9,12 @@ import EmailInput from "./EmailInput";
 import CourseTimeInput from "./CourseTimeInput";
 import FeedBackInput from "./FeedBackInput";
 import TermsConditions from "./TermsNCondition";
+import { useStripe, useElements, CardElement } from "@stripe/react-stripe-js";
 
 function RegistrationForm() {
+  const stripe = useStripe();
+  const elements = useElements();
+
   const [formState, setFormState] = useState({
     firstName: "",
     middleName: "",
@@ -38,42 +42,100 @@ function RegistrationForm() {
     }));
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    console.log(formState);
-
-    axios
-      .post("http://localhost:3001/api/insert", {
-        firstName: formState.firstName,
-        lastName: formState.lastName,
-        phoneNum: formState.phoneNumber,
-        email: formState.email,
-        courseTime: formState.courseTime,
-        channel: formState.channel,
-        otherDetails: formState.otherDetails,
-      })
-      .then(() => {
-        alert("Successful submission");
-        // Reset the form state
-        setFormState({
-          firstName: "",
-          middleName: "",
-          lastName: "",
-          phoneNumber: "",
-          email: "",
-          courseTime: null,
-          channel: "",
-          agreeToTerms: false,
-          otherDetails: "",
-        });
-      })
-      .catch((error) => {
-        if (error.response && error.response.status === 409) {
-          alert("This course date is full");
-        } else {
-          console.error("There was an error!", error);
+    // Ensure that Stripe has loaded.
+    if (!stripe || !elements) {
+      return;
+    }
+    //check if the course is full
+    try {
+      const checkCourseRes = await axios.post(
+        "http://localhost:3001/api/check-course",
+        {
+          courseTime: formState.courseTime,
         }
+      );
+    } catch (error) {
+      if (error.response && error.response.status === 409) {
+        alert("This course date is full");
+        return;
+      } else {
+        console.error("There was an error!", error);
+        return;
+      }
+    }
+
+    const cardElement = elements.getElement(CardElement);
+
+    if (!cardElement) {
+      alert("Please enter your payment information");
+      return;
+    }
+
+    const { error, paymentMethod } = await stripe.createPaymentMethod({
+      type: "card",
+      card: cardElement,
+    });
+
+    if (error) {
+      console.log("[error]", error);
+      return;
+    }
+
+    const response = await axios.post(
+      "http://localhost:3001/api/create-payment-intent",
+      { amount: 9900 }
+    ); // amount is in cents
+
+    if (!response.data || !response.data.clientSecret) {
+      console.log("Invalid response from server:", response);
+      return;
+    }
+
+    const paymentIntent = response.data.clientSecret;
+
+    const { error: confirmError, paymentIntent: confirmedPaymentIntent } =
+      await stripe.confirmCardPayment(paymentIntent, {
+        payment_method: paymentMethod.id,
       });
+
+    if (confirmError) {
+      console.log("[confirmError]", confirmError);
+      return;
+    }
+
+    if (confirmedPaymentIntent.status === "succeeded") {
+      // Only if payment is successful, submit the form
+      axios
+        .post("http://localhost:3001/api/insert", {
+          firstName: formState.firstName,
+          lastName: formState.lastName,
+          phoneNum: formState.phoneNumber,
+          email: formState.email,
+          courseTime: formState.courseTime,
+          channel: formState.channel,
+          otherDetails: formState.otherDetails,
+        })
+        .then(() => {
+          alert("Successful submission");
+          // Reset the form state
+          setFormState({
+            firstName: "",
+            middleName: "",
+            lastName: "",
+            phoneNumber: "",
+            email: "",
+            courseTime: null,
+            channel: "",
+            agreeToTerms: false,
+            otherDetails: "",
+          });
+        })
+        .catch((error) => {
+          console.error("There was an error!", error);
+        });
+    }
   };
 
   return (
@@ -98,6 +160,10 @@ function RegistrationForm() {
       {/*Terms&Condition section */}
       <TermsConditions value={formState} onChange={handleChange} />
       <br></br>
+      <div className="stripe-section">
+        <h4>Payment Information *</h4>
+        <CardElement />
+      </div>
       <button type="submit">Submit</button>
     </form>
   );

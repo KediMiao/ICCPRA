@@ -3,6 +3,10 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 const app = express();
 const mysql = require("mysql");
+const nodemailer = require("nodemailer");
+const stripe = require("stripe")(
+  "sk_test_51N0U7sIvvDWEzpsTGGZr2vWhXSgqTFtFS8B9CqVhcrzP6e4TI9qVf9wNsASpRAETR1cgWjvIqOrUUKs4vfGC16s300K6Nsuhdb"
+);
 
 const db = mysql.createPool({
   host: "iccpra-rds-mysql-062023-webapplication.cd9upzil6vue.us-west-1.rds.amazonaws.com",
@@ -15,19 +19,30 @@ app.use(express.json());
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-//Table for Date registration limitation
-app.get("/api/createTable", (req, res) => {
-  const sqlCreateTable =
-    "CREATE TABLE registrations (date VARCHAR(255), count INT)";
-  db.query(sqlCreateTable, (err, result) => {
-    if (err) {
-      console.error(err);
-      res.status(500).send("Server error");
+//API for create stripe payment
+app.post("/api/create-payment-intent", async (req, res) => {
+  try {
+    const { amount } = req.body;
+
+    // Create a PaymentIntent with the order amount and currency
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount,
+      currency: "usd", //currency
+    });
+    console.log(paymentIntent);
+
+    if (!paymentIntent) {
+      console.error("PaymentIntent is null");
+      res.status(500).json({ error: "PaymentIntent creation failed" });
     } else {
-      console.log(result);
-      res.status(200).send("Successfully created table");
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+      });
     }
-  });
+  } catch (err) {
+    console.error("Error creating PaymentIntent: ", err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // check date slot
@@ -143,19 +158,6 @@ app.post("/api/insert", (req, res) => {
   });
 });
 
-// Test code for table information
-app.get("/api/registrations", (req, res) => {
-  const sqlSelect = "SELECT * FROM registrations";
-  db.query(sqlSelect, (err, result) => {
-    if (err) {
-      console.error(err);
-      res.status(500).send("Server error");
-    } else {
-      res.json(result);
-    }
-  });
-});
-
 //Guest login module
 app.post("/login", (req, res) => {
   const { email, idStudents } = req.body;
@@ -192,6 +194,26 @@ app.get("/api/get/:userId", (req, res) => {
     }
     res.json(result);
   });
+});
+
+//Check avaliability function
+app.post("/api/check-course", (req, res) => {
+  const courseTime = req.body.courseTime;
+
+  db.query(
+    "SELECT COUNT(*) AS count FROM students WHERE courseTime = ?",
+    [courseTime],
+    (err, results) => {
+      if (err) {
+        console.error(err);
+        res.status(500).send("Server error");
+      } else if (results[0].count >= 2) {
+        res.status(409).send("This course time is full");
+      } else {
+        res.status(200).send("Course time is available");
+      }
+    }
+  );
 });
 
 //Reschedule function
